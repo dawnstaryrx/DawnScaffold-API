@@ -1,0 +1,22 @@
+dawn:
+  version: 1.0.0
+server:
+  port: 8080
+  address: 0.0.0.0
+  tomcat:
+    connection-timeout: 600000    # 设置连接超时时间为10分钟（毫秒）
+    max-connections: 1000         # 设置最大连接数
+    accept-count: 100             # 设置最大排队数（当所有连接都在使用时，排队的请求数目）
+    keep-alive-timeout: 60000     # 设置keep-alive超时时间（单位：毫秒）
+  servlet:
+    context-parameters:
+      read-timeout: 600000        # 设置读取超时时间为10分钟（毫秒）
+spring:
+  application:
+    name: DawnScaffold
+  profiles:
+    active: prod # 默认使用 dev 配置
+
+springdoc:
+  api-docs:
+    enabled: true # 开启swagger文档

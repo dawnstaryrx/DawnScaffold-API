@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gooodh.auth.mapper.SysPermissionMapper">
+
+    <resultMap id="PermissionRoleMap" type="com.gooodh.model.po.SysPermission">
+        <id property="id" column="permission_id"/>
+        <result property="url" column="url"/>
+        <result property="method" column="method"/>
+        <collection property="roles" ofType="com.gooodh.model.po.SysRole">
+            <id property="id" column="role_id"/>
+            <result property="roleCode" column="role_code"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectAllPermissionsWithRoles" resultMap="PermissionRoleMap">
+        SELECT p.id as permission_id,
+               p.url,
+               p.method,
+               r.id as role_id,
+               r.role_code
+        FROM sys_permission p
+                 JOIN sys_role_permission rp ON p.id = rp.permission_id
+                 JOIN sys_role r ON rp.role_id = r.id
+    </select>
+
+    <!-- 根据用户ID查询权限 -->
+    <select id="getPermissionsByUserId" resultType="java.lang.String">
+        SELECT DISTINCT p.permission_code
+        FROM sys_user_role ur
+                 JOIN sys_role_permission rp ON ur.role_id = rp.role_id
+                 JOIN sys_permission p ON rp.permission_id = p.id
+        WHERE ur.user_id = #{userId}
+    </select>
+
+</mapper>
