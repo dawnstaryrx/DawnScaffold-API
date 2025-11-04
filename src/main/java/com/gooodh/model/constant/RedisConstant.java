@@ -9,4 +9,5 @@ public class RedisConstant {
     public static final String EMAIL_RESET_CODE_PREFIX = "email:code:reset:";
     public static final Integer CODE_TIME_SECOND = 300;
     public static final String USER_REFRESH_TOKEN_PREFIX = "user:refreshToken:";
+    public static final String CAPTCHA_VALID_TOKEN_PREFIX = "validToken:";
 }

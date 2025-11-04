@@ -141,7 +141,8 @@ public class SecurityConfig {
             authorize.requestMatchers(
                     "/register",
                     "/sendCode",
-                    "/login/password"
+                    "/login/password",
+                    "/captcha/**"
             ).permitAll();
 
             authorize.anyRequest().denyAll(); // 默认拒绝所有未匹配的请求

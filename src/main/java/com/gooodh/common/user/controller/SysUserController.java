@@ -33,7 +33,7 @@ public class SysUserController {
     /**
      * 发送验证码
      * @param emailOrPhone 邮箱或手机号
-     * @param type 发送验证码类型: email_login, phone_login, email_register, phone_register
+     * @param type 发送验证码类型: emailLogin, phoneLogin, emailRegister, phoneRegister
      * @return
      */
     @Operation(summary = "发送验证码", description = "发送邮箱或手机号验证码")
