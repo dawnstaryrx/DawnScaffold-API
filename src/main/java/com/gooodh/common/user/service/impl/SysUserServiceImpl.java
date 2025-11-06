@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +32,7 @@ public class SysUserServiceImpl implements SysUserService {
     private final SysUserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    private final PhoneService phoneService;
+    private final SmsService smsService;
     private final StringRedisTemplate stringRedisTemplate;
     private final SysRoleService sysRoleService;
     private final SysUserRoleService sysUserRoleService;
@@ -107,11 +106,23 @@ public class SysUserServiceImpl implements SysUserService {
      * @param type
      */
     @Override
-    public void sendCode(String emailOrPhone, String type) {
+    public void sendCode(String emailOrPhone, String type, String token) {
         // 判断是否为空
         if (emailOrPhone == null || emailOrPhone.isEmpty()){
             ExceptionTool.throwException("邮箱或手机号不能为空！");
         }
+        // 判断token是否有效
+        if (token == null || token.isEmpty()) {
+            ExceptionTool.throwException("请先通过行为验证！");
+        }
+        // Redis 中存储行为验证码通过的标识：CAPTCHA_VALID_TOKEN_PREFIX + token
+        String redisKey = RedisConstant.CAPTCHA_VALID_TOKEN_PREFIX + token;
+        String valid = stringRedisTemplate.opsForValue().get(redisKey);
+        if (valid == null) {
+            ExceptionTool.throwException("行为验证已失效，请重新验证！");
+        }
+        // 一旦使用成功，可选择立即删除 token，避免重复使用
+        stringRedisTemplate.delete(redisKey);
         SysUser user = userMapper.getUserByUsernameOrEmailOrPhone(emailOrPhone);
         // 生成验证码
         String code = RandomUtil.getCode();
@@ -143,13 +154,13 @@ public class SysUserServiceImpl implements SysUserService {
                 ExceptionTool.throwException("用户已存在！");
             }
             // 发送验证码
-            phoneService.sendMsg(emailOrPhone, code, type);
+            smsService.sendMsg(emailOrPhone, code, type);
         } else if (CodeTypeEnum.LOGIN_PHONE_CODE.getType().equals(type)){
             if (user == null){
                 ExceptionTool.throwException("用户不存在！");
             }
             // 发送验证码
-            phoneService.sendMsg(emailOrPhone, code, type);
+            smsService.sendMsg(emailOrPhone, code, type);
         } else {
             ExceptionTool.throwException("不支持的验证码类型！");
         }

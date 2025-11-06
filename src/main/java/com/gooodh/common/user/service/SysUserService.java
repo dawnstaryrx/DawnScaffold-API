@@ -10,5 +10,5 @@ public interface SysUserService {
 
     SysUser getUserById(Integer userId);
 
-    void sendCode(String emailOrPhone, String type);
+    void sendCode(String emailOrPhone, String type, String token);
 }

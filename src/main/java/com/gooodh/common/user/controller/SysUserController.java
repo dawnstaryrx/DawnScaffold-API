@@ -38,8 +38,8 @@ public class SysUserController {
      */
     @Operation(summary = "发送验证码", description = "发送邮箱或手机号验证码")
     @PostMapping("/sendCode")
-    public Result sendCode(@RequestParam String emailOrPhone, @RequestParam String type){
-        userService.sendCode(emailOrPhone, type);
+    public Result sendCode(@RequestParam String emailOrPhone, @RequestParam String type, @RequestParam String token){
+        userService.sendCode(emailOrPhone, type, token);
         return Result.success();
     }
 }

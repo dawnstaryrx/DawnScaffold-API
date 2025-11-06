@@ -5,6 +5,7 @@ import cloud.tianai.captcha.application.vo.ImageCaptchaVO;
 import cloud.tianai.captcha.common.constant.CaptchaTypeConstant;
 import cloud.tianai.captcha.common.response.ApiResponse;
 import cloud.tianai.captcha.validator.common.model.dto.ImageCaptchaTrack;
+import com.gooodh.annotation.OperationLog;
 import com.gooodh.model.constant.RedisConstant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 
+/**
+ * 行为验证码相关接口
+ */
 @RestController
 @RequestMapping("/captcha")
 @RequiredArgsConstructor
@@ -21,14 +25,24 @@ public class CaptchaController {
     private ImageCaptchaApplication application;
     private final StringRedisTemplate stringRedisTemplate;
 
+    /**
+     * 生成验证码(该数据返回给前端用于展示验证码数据)
+     * @return
+     */
     @PostMapping("/gen")
+    @OperationLog("生成行为验证码")
     public ApiResponse<ImageCaptchaVO> genCaptcha() {
-        // 1.生成验证码(该数据返回给前端用于展示验证码数据)
         // 参数1为具体的验证码类型， 默认支持 SLIDER、ROTATE、WORD_IMAGE_CLICK、CONCAT 等验证码类型，详见： `CaptchaTypeConstant`类
         return  application.generateCaptcha(CaptchaTypeConstant.SLIDER);
     }
 
+    /**
+     * 校验验证码
+     * @param data
+     * @return
+     */
     @PostMapping("/check")
+    @OperationLog("校验行为验证码")
     public ApiResponse<?> checkCaptcha(@RequestBody Data data) {
         ApiResponse<?> response = application.matching(data.getId(), data.getData());
         if (response.isSuccess()) {

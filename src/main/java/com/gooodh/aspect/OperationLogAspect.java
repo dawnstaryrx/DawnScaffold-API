@@ -48,7 +48,7 @@ public class OperationLogAspect {
 
             log.info("""
                     操作日志:
-                      模块: {}
+                      描述: {}
                       方法: {}
                       参数: {}
                       返回: {}
