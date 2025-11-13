@@ -25,7 +25,7 @@ public class JSONUtil {
     // 反序列时，遇到未知的字段，不报错。比如Json中有key1字段，Java的object中没有key1字段，如果不设置成false，反序列时会报错
     objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     // 数字类型统一转成String， 因为前端Js不支持long类型的数据，前端读取到long类型数据会丢失后三位数
-    objectMapper.configure(JsonWriteFeature.WRITE_NUMBERS_AS_STRINGS.mappedFeature(), true);
+//    objectMapper.configure(JsonWriteFeature.WRITE_NUMBERS_AS_STRINGS.mappedFeature(), true);
   }
 
   public static <T> T convert(Object obj, Class<T> returnType) {

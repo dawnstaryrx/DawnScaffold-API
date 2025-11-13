@@ -6,6 +6,8 @@ import com.gooodh.model.constant.RedisConstant;
 import com.gooodh.model.dto.EmailDTO;
 import com.gooodh.model.dto.RegisterDTO;
 import com.gooodh.model.enums.CodeTypeEnum;
+import com.gooodh.model.enums.PlatformEnum;
+import com.gooodh.model.enums.RegisterTypeEnum;
 import com.gooodh.model.po.SysRole;
 import com.gooodh.model.po.SysUser;
 import com.gooodh.common.user.mapper.SysUserMapper;
@@ -19,8 +21,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.gooodh.model.constant.RedisConstant.*;
 
@@ -45,6 +50,14 @@ public class SysUserServiceImpl implements SysUserService {
     private String loginEmailTitle;
     @Value("${email.login.content}")
     private String loginEmailContent;
+    @Value("${super-admin}")
+    private String superAdmin;
+
+    public List<String> getSuperAdminList() {
+        return Arrays.stream(superAdmin.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public SysUser getUserByUsernameOrEmailOrPhone(String username) {
@@ -56,6 +69,14 @@ public class SysUserServiceImpl implements SysUserService {
         return userMapper.getById(userId);
     }
 
+    /**
+     * 注册
+     * - 检查用户是否存在
+     * - 检查验证码是否正确
+     * - 检查两次密码是否一致
+     * - 保存用户信息
+     * @param registerDTO
+     */
     @Override
     public void register(RegisterDTO registerDTO) {
         // 查询用户是否存在
@@ -66,10 +87,15 @@ public class SysUserServiceImpl implements SysUserService {
         // 检查验证码是否正确
         ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();
         String key = "";
-        if (Objects.equals(registerDTO.getType(), CodeTypeEnum.REGISTER_EMAIL_CODE.getType())){
+        SysUser user = new SysUser();
+        if (Objects.equals(registerDTO.getType(), RegisterTypeEnum.EMAIL_TYPE.getType())){
             key = EMAIL_REGISTER_CODE_PREFIX + registerDTO.getEmail();
-        } else if (Objects.equals(registerDTO.getType(), CodeTypeEnum.REGISTER_PHONE_CODE.getType())){
+            user.setEmail(registerDTO.getEmail());
+            user.setUsername(registerDTO.getEmail());
+        } else if (Objects.equals(registerDTO.getType(), RegisterTypeEnum.PHONE_TYPE.getType())){
             key = PHONE_REGISTER_CODE_PREFIX + registerDTO.getPhone();
+            user.setPhone(registerDTO.getPhone());
+            user.setUsername(registerDTO.getPhone());
         }
         String redisCode = operations.get(key);
         if (!registerDTO.getCode().equals(redisCode)){
@@ -79,25 +105,25 @@ public class SysUserServiceImpl implements SysUserService {
         if (!registerDTO.getPassword().equals(registerDTO.getRePassword())){
             ExceptionTool.throwException("两次密码不一致！");
         }
-        switch (registerDTO.getType()){
-            case "email":
-                break;
-            case "phone":
-                break;
-            default:
-                ExceptionTool.throwException("不支持的注册类型！");
-        }
-        SysUser user = new SysUser();
-        user.setUsername(registerDTO.getEmail());
+        // 保存用户信息
         user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
+        // TODO 设置默认头像
+        user.setAvatar("null");
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
-        // TODO 给超级管理员用户分配角色 ROLE_SUPER_ADMIN 其他用户 ROLE_USER
+        // 获取两种角色
         SysRole roleSuperAdmin = sysRoleService.getRoleByRoleCode("ROLE_SUPER_ADMIN");
         SysRole roleUser = sysRoleService.getRoleByRoleCode("ROLE_USER");
         userMapper.add(user);
-        //TODO  SuperAdmin
-        sysUserRoleService.add(user.getId(), roleSuperAdmin.getId());
+        // superAdminList设置为Super Admin，其他用户设置为普通用户User
+        List<String> superAdminList = getSuperAdminList();
+        if (superAdminList.contains(registerDTO.getEmail()) ||
+            superAdminList.contains(registerDTO.getPhone())
+        ) {
+            sysUserRoleService.add(user.getId(), roleSuperAdmin.getId());
+            return;
+        }
+        sysUserRoleService.add(user.getId(), roleUser.getId());
     }
 
     /**
@@ -167,5 +193,34 @@ public class SysUserServiceImpl implements SysUserService {
         // 往Redis中存储一个键值对
         ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();
         operations.set(key,  code, CODE_TIME_SECOND, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public SysUser getUserByOpenId(String openId, String platform) {
+        if(PlatformEnum.GITHUB.getPlatform().equals(platform))
+            return userMapper.getUserByGithubOpenId(openId);
+        else if(PlatformEnum.LINUX_DO.getPlatform().equals(platform))
+            return userMapper.getUserByLinuxDoOpenId(openId);
+        return null;
+    }
+
+    @Override
+    public void createUserWithOpenId(SysUser user, String openId, String platform) {
+        user.setUsername(openId);
+        user.setNickname("momo");
+        user.setPoint(0);
+        user.setLoginFailTime(0);
+        user.setCreateTime(LocalDateTime.now());
+        user.setUpdateTime(LocalDateTime.now());
+        if(PlatformEnum.GITHUB.getPlatform().equals(platform)) {
+            user.setGithubOpenid(openId);
+        }
+        else if(PlatformEnum.LINUX_DO.getPlatform().equals(platform)) {
+            user.setLinuxdoOpenid(openId);
+        }
+        userMapper.add(user);
+        // 赋予用户权限
+        SysRole roleUser = sysRoleService.getRoleByRoleCode("ROLE_USER");
+        sysUserRoleService.add(user.getId(), roleUser.getId());
     }
 }

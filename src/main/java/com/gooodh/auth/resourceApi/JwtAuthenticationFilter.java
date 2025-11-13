@@ -25,9 +25,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String[] WHITE_LIST = new String[]{
             "/register",
             "/sendCode",
-            "/login/password",
+            "/login/**",
             "/captcha/gen",
-            "/captcha/check"
+            "/captcha/check",
+            "/auth/**"
     };
 
     public JwtAuthenticationFilter(JwtService jwtService) {

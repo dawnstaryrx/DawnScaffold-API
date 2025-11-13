@@ -11,4 +11,8 @@ public interface SysUserService {
     SysUser getUserById(Integer userId);
 
     void sendCode(String emailOrPhone, String type, String token);
+
+    SysUser getUserByOpenId(String openId, String platform);
+
+    void createUserWithOpenId(SysUser user, String openId, String platform);
 }

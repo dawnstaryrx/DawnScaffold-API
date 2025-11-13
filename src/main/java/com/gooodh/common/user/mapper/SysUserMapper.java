@@ -28,11 +28,17 @@ public interface SysUserMapper {
     @Select("SELECT * FROM sys_user WHERE username = #{username} OR email = #{username} OR phone = #{username}")
     SysUser getUserByUsernameOrEmailOrPhone(String username);
 
-    @Insert("INSERT INTO sys_user(username, password, email, create_time, update_time) " +
-            "VALUES(#{username}, #{password}, #{email}, #{createTime}, #{updateTime})")
+    @Insert("INSERT INTO sys_user(username,github_openid, linuxdo_openid,password, email, create_time, update_time) " +
+            "VALUES(#{username},#{githubOpenid}, #{linuxdoOpenid}, #{password}, #{email}, #{createTime}, #{updateTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void add(SysUser user);
 
     @Select("SELECT * FROM sys_user WHERE id = #{id}")
     SysUser getById(Integer id);
+
+    @Select("SELECT * FROM sys_user WHERE github_openid = #{openId}")
+    SysUser getUserByGithubOpenId(String openId);
+
+    @Select("SELECT * FROM sys_user WHERE linuxdo_openid = #{openId}")
+    SysUser getUserByLinuxDoOpenId(String openId);
 }

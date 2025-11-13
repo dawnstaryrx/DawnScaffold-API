@@ -4,6 +4,10 @@ import com.gooodh.auth.handler.exception.CustomAuthenticationExceptionHandler;
 import com.gooodh.auth.handler.exception.CustomSecurityExceptionHandler;
 import com.gooodh.auth.handler.login.LoginFailHandler;
 import com.gooodh.auth.handler.login.LoginSuccessHandler;
+import com.gooodh.auth.handler.login.github.GitHubAuthenticationFilter;
+import com.gooodh.auth.handler.login.github.GitHubAuthenticationProvider;
+import com.gooodh.auth.handler.login.linuxdo.LinuxDoAuthenticationFilter;
+import com.gooodh.auth.handler.login.linuxdo.LinuxDoAuthenticationProvider;
 import com.gooodh.auth.handler.login.username.UsernameAuthenticationFilter;
 import com.gooodh.auth.handler.login.username.UsernameAuthenticationProvider;
 import com.gooodh.auth.resourceApi.JwtAuthenticationFilter;
@@ -108,6 +112,38 @@ public class SecurityConfig {
         // 加入过滤链
         http.addFilterBefore(usernameLoginFilter, UsernamePasswordAuthenticationFilter.class);
 
+        // 登录方式二：GitHub 登录
+        String githubLoginPath = "/login/github";
+        RequestMatcher githubLoginMatcher = request ->
+                githubLoginPath.equals(request.getServletPath()) &&
+                        HttpMethod.POST.matches(request.getMethod());
+
+        GitHubAuthenticationFilter githubLoginFilter = new GitHubAuthenticationFilter(
+                githubLoginMatcher,
+                new ProviderManager(List.of(
+                        applicationContext.getBean(GitHubAuthenticationProvider.class)
+                )),
+                loginSuccessHandler,
+                loginFailHandler
+        );
+        http.addFilterBefore(githubLoginFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // 登录方式三：LinuxDo 登录
+        String linuxDoLoginPath = "/login/linuxdo";
+        // 创建一个请求匹配器
+        RequestMatcher linuxDoLoginMatcher = request ->
+                linuxDoLoginPath.equals(request.getServletPath()) && HttpMethod.POST.matches(request.getMethod());
+        // 创建 自定义认证过滤器 LinuxDoAuthenticationFilter
+        LinuxDoAuthenticationFilter linuxDoLoginFilter = new LinuxDoAuthenticationFilter(
+                linuxDoLoginMatcher,
+                new ProviderManager(List.of(
+                    applicationContext.getBean(LinuxDoAuthenticationProvider.class)
+                )),
+                loginSuccessHandler,
+                loginFailHandler
+        );
+        http.addFilterBefore(linuxDoLoginFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -141,8 +177,9 @@ public class SecurityConfig {
             authorize.requestMatchers(
                     "/register",
                     "/sendCode",
-                    "/login/password",
-                    "/captcha/**"
+                    "/login/**",
+                    "/captcha/**",
+                    "/auth/**"
             ).permitAll();
 
             authorize.anyRequest().denyAll(); // 默认拒绝所有未匹配的请求
